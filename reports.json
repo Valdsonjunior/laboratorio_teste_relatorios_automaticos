@@ -12,5 +12,12 @@
         "date": "2025-01-15",
         "category": "mensal",
         "subCategory": "amazonia"
+    },
+    {
+        "title": "Relatório Diario de Biomas",
+        "url": "relatorios/biomas_diario.html",
+        "date": "2025-02-11",
+        "category": "diario",
+        "subCategory": "biomas"
     }
 ]
