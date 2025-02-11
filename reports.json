@@ -1,16 +1,16 @@
 [
     {
-        "name": "Relatório Mensal - Janeiro",
-        "date": "2024-01-01",
-        "category": "mensal",
-        "subCategory": "brasil",
-        "path": "relatorios/relatorio_janeiro.html"
+        "title": "Relatório Anual de Biomas",
+        "url": "relatorios/biomas_anual.pdf",
+        "date": "2025-02-01",
+        "category": "anual",
+        "subCategory": "biomas"
     },
     {
-        "name": "Relatório Semanal - 1ª Semana",
-        "date": "2024-02-01",
-        "category": "semanal",
-        "subCategory": "amazonia",
-        "path": "relatorios/relatorio_semana1.html"
+        "title": "Relatório Mensal da Amazônia",
+        "url": "relatorios/amazonia_mensal.html",
+        "date": "2025-01-15",
+        "category": "mensal",
+        "subCategory": "amazonia"
     }
 ]
