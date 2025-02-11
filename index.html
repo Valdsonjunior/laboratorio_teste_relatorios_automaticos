@@ -111,7 +111,7 @@
 
         async function carregarRelatorios() {
             try {
-                const response = await fetch('reports.json');
+                const response = await fetch('https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/reports.json');
                 reports = await response.json();
                 exibirRelatorios();
             } catch (error) {
