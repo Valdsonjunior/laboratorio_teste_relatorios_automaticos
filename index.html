@@ -124,6 +124,9 @@
             const reportList = document.getElementById("reportList");
             reportList.innerHTML = "";
 
+            // Ordena os relatórios por data (do mais recente para o mais antigo)
+            reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             const dataSelecionada = document.getElementById("dateFilter").value;
             const categoriaSelecionada = document.getElementById("categoryFilter").value;
             const subCategoriaSelecionada = document.getElementById("subCategoryFilter").value;
