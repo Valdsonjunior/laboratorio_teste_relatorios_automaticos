@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios CODESUS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: auto;
+        }
+        h1, h3 {
+            text-align: center;
+            color: #333;
+        }
+        h4 {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #444;
+        }
+        p {
+            margin: 5px 0;
+            color: #666;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #reportList {
+            margin-top: 20px;
+            padding: 0;
+            list-style: none;
+        }
+        #reportList li {
+            padding: 10px;
+            background: #e9e9e9;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+        #reportList li a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+        #reportList li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Laboratório de Testes - Relatórios Automatizados</h1>
+        <h3>Espaço para construção, definição de análises e layouts para iniciar a automatização de relatórios CODESUS.</h3>
+
+        <h4>Responsáveis:</h4>
+        <p>Fábio Barbosa Passos</p>
+        <p>Monica Alves de Vasconcelos</p>
+        <p>Valdson Soares Dantas Júnior</p>
+
+        <label for="dateFilter">Filtrar por data:</label>
+        <input type="date" id="dateFilter">
+
+        <label for="categoryFilter">Filtrar período da análise:</label>
+        <select id="categoryFilter">
+            <option value="">Todas</option>
+            <option value="anual">Anual</option>
+            <option value="mensal">Mensal</option>
+            <option value="semanal">Semanal</option>
+            <option value="diario">Diário</option>
+        </select>
+
+        <label for="subCategoryFilter">Filtrar por tipo do relatório:</label>
+        <select id="subCategoryFilter">
+            <option value="">Todos</option>
+            <option value="brasil">Brasil</option>
+            <option value="biomas">Biomas</option>
+            <option value="estados">Estados</option>
+            <option value="amazonia">Amazônia Legal</option>
+            <option value="integrado">Integrado CGMAB</option>
+            <option value="CIMAN">Sala de Situação</option>
+            <option value="CMN">Comando Militar do Norte</option>
+            <option value="BDI">BDI</option>
+            <option value="eventos">Especial Eventos</option>
+            <option value="analistas">Especial para Analistas</option>
+        </select>
+
+        <h4>Relatórios Disponíveis:</h4>
+        <ul id="reportList"></ul>
+    </div>
+
+    <script>
+        let reports = [];
+
+        async function carregarRelatorios() {
+            try {
+                const response = await fetch('reports.json');
+                reports = await response.json();
+                exibirRelatorios();
+            } catch (error) {
+                console.error("Erro ao carregar os relatórios:", error);
+                document.getElementById("reportList").innerHTML = "<li>Erro ao carregar relatórios.</li>";
+            }
+        }
+
+        function exibirRelatorios() {
+            const reportList = document.getElementById("reportList");
+            reportList.innerHTML = "";
+
+            const dataSelecionada = document.getElementById("dateFilter").value;
+            const categoriaSelecionada = document.getElementById("categoryFilter").value;
+            const subCategoriaSelecionada = document.getElementById("subCategoryFilter").value;
+
+            const filteredReports = reports.filter(report => {
+                return (
+                    (!dataSelecionada || report.date === dataSelecionada) &&
+                    (!categoriaSelecionada || report.category === categoriaSelecionada) &&
+                    (!subCategoriaSelecionada || report.subCategory === subCategoriaSelecionada)
+                );
+            });
+
+            if (filteredReports.length === 0) {
+                reportList.innerHTML = "<li>Nenhum relatório encontrado.</li>";
+                return;
+            }
+
+            filteredReports.forEach(report => {
+                let listItem = document.createElement("li");

@@ -1,0 +1,16 @@
+[
+    {
+        "name": "Relatório Mensal - Janeiro",
+        "date": "2024-01-01",
+        "category": "mensal",
+        "subCategory": "brasil",
+        "path": "relatorios/relatorio_janeiro.html"
+    },
+    {
+        "name": "Relatório Semanal - 1ª Semana",
+        "date": "2024-02-01",
+        "category": "semanal",
+        "subCategory": "amazonia",
+        "path": "relatorios/relatorio_semana1.html"
+    }
+]
