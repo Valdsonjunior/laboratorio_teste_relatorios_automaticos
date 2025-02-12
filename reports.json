@@ -1,23 +1,23 @@
 [
     {
-        "title": "Relatório Anual de Biomas",
-        "url": "relatorios/biomas_anual.html",
-        "date": "2025-02-01",
-        "category": "anual",
-        "subCategory": "biomas"
-    },
-    {
-        "title": "Relatório Mensal da Amazônia",
-        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/amazonia_mensal.html",
-        "date": "2025-01-15",
-        "category": "mensal",
-        "subCategory": "amazonia"
-    },
-    {
-        "title": "Relatório Diario de Biomas",
-        "url": "relatorios/biomas_diario.html",
+        "title": "Boletim Mensal - Integrado v0.0",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/integrado_mensal_v0.0.html",
         "date": "2025-02-11",
-        "category": "diario",
+        "category": "mensal",
+        "subCategory": "integrado"
+    },
+    {
+        "title": "Relatório Mensal - CMN v0.0",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/cmn_mensal_v0.0.html",
+        "date": "2025-02-11",
+        "category": "mensal",
+        "subCategory": "CMN"
+    },
+    {
+        "title": "Relatório Semanal - Biomas v0.0",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/biomas_semanal_v0.0.html",
+        "date": "2025-02-11",
+        "category": "semanal",
         "subCategory": "biomas"
     }
 ]
