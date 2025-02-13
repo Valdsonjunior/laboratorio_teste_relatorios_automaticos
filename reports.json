@@ -33,5 +33,12 @@
         "date": "2025-02-12",
         "category": "semanal",
         "subCategory": "biomas"
-    }   
+    },
+    {
+    "title": "Relatório Semanal - Biomas v1.0",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/biomas_semanal_v1.0.pdf",
+        "date": "2025-02-13",
+        "category": "semanal",
+        "subCategory": "biomas"
+    }      
 ]
