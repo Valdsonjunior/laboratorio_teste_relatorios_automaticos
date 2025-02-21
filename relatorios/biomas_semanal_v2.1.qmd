@@ -1,0 +1,776 @@
+---
+echo: false
+warning: false
+format:
+    html: default
+    pdf:
+        execute:
+            echo: false
+            warning: false
+            error: false
+margin: 0
+code-fold: true
+fig-width: 7.5            
+    #html-math-method: katex
+    #css: styles.css
+---
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+#### BOLETIM SEMANAL - SITUAÇÃO ATUAL DE EVENTOS DE FOGO 
+##### 20/02/2025
+**BIOMAS: AMAZÔNIA, PANTANAL E CERRADO**
+:::
+
+
+::: {.justify style="text-align: justify;"}
+Este relatório elaborado semanalmente pela Coordenação de Desenvolvimento Sustentável - CODESUS, compõe informações sobre o ranking da área de influência acumulada por eventos de fogo nos municípios brasileiros, o ranking da área de influência acumulada por eventos de fogo nos estados brasileiros e o número total de eventos ativos de fogo na data atual. Além de histórico de eventos de fogo acumulados nos biomas Amazônia, Pantanal e Cerrado no período de 2021 a 2024. O mapa 1, ilustra os biomas analisados e suas localizações no território brasileiro.
+:::
+
+![**Mapa 1.** Biomas analisados no boletim do Painel do Fogo: Amazônia, Cerrado e Pantanal](imagens/mapa_capa.png){width="80%"}
+
+
+::: {.justify style="text-align: justify;"}
+Os dados gerados pelo painel do fogo são atualizados e apresentados na sala de situação do Centro Integrado Multiagências de Coordenação Operacional Nacional – CIMAN nas segundas e quintas-feiras. Durante as salas são apresentadas previsões climáticas importantes para os gestores e combatentes. A CODESUS elabora mensalmente um Relatório Técnico de eventos de fogo ao Comando Militar do Norte – CMN. Um boletim integrador entre a Codesus, a Coordenação de Hidrologia e da Meteorologia tem sido gerado e divulgado mensalmente desde agosto de 2024. As informações dão suporte aos Corpos de Bombeiros Militar, PrevFogo-IBAMA, ICMBio, Defesas Civis Municipais e Estaduais, bem como as diversas brigadas de incêndios distribuídas no país. Vale ressaltar que na metodologia utilizada pelo Painel do Fogo, é necessário ter no mínimo três detecções de focos de calor, para que seja gerado um evento de fogo. Os eventos com maior severidade para acionamento são aqueles que persistem em duração e tem maior área de influência, mas podem ser impactados por sua velocidade de expansão.
+:::
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+#### BOLETIM SEMANAL - SITUAÇÃO ATUAL DE EVENTOS DE FOGO NA AMAZÔNIA
+    
+:::
+
+```{python} 
+import rasterio
+from rasterio.plot import show
+import seaborn as sns
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+import shapely as sp
+import psycopg2
+import geoalchemy2
+from sqlalchemy import create_engine
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+
+```
+
+
+```{python}
+sql_3b ="""
+--- RANKING MAPA COREOPLETICO
+SELECT 
+	SUM(st_area(st_transform(st_intersection(sub.geom_acumulada,y.geom),5880)))/10000 as area_eve_ha,
+    y.nome AS municipio,
+    y.sg_uf AS uf,
+    COUNT(DISTINCT sub.id_evento) AS total_eventos,
+	st_intersection((SELECT ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida WHERE cd_bioma = 1 GROUP BY cd_bioma), y.geom) as geom	
+FROM 
+	    (
+		SELECT DISTINCT ON (mv.id_evento)
+	        mv.id,
+	        mv.id_evento,
+	        mv.dt_passagem,
+	        geom_acumulada
+	    FROM 
+	        queimadas.mv_indicadores_queimadas mv
+	    JOIN 
+	        (SELECT cd_bioma, ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida GROUP BY cd_bioma) AS x
+	        ON ST_Intersects(mv.geom_acumulada, x.geom)
+	    WHERE    
+	        mv.area_acumulada_ha >= 100
+	        AND mv.dt_passagem BETWEEN '2024-12-20' AND '2024-12-21' --A DATA APÓS O AND NÃO ENTRA NA CONSULTA
+			AND cd_bioma = 1
+	    ORDER BY 
+	        mv.id_evento, mv.dt_passagem DESC
+			) AS sub  
+
+JOIN 
+    bases_auxiliares.ibge_bc250_lim_municipio_a AS y
+    ON ST_Intersects(sub.geom_acumulada, y.geom)
+GROUP BY 
+	y.nome, y.sg_uf, geom
+ORDER BY 
+	area_eve_ha DESC
+LIMIT 10
+"""
+```
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+      
+    # Importar a query para um GeoDataFrame usando geopandas
+    amazonia_b = gpd.read_postgis(
+        sql=sql_3b,
+        con=conn_str,  # String de conexão com o banco de dados
+        geom_col='geom'  # Coluna de geometria
+    )
+```
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+    
+    # Definir a consulta SQL
+    sql_4 = """
+        -- CENTRÓIDE DOS EVENTOS BIOMAS - MV_INDICARES_QUEIMADAS
+        SELECT DISTINCT ON (mv.id_evento)
+	        mv.id,
+	        mv.id_evento,
+	        mv.dt_passagem,
+	        st_centroid(geom_acumulada) as geom
+	    FROM 
+	        queimadas.mv_indicadores_queimadas mv
+	    JOIN 
+	        (SELECT cd_bioma, ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida GROUP BY cd_bioma) AS x
+	        ON ST_Intersects(mv.geom_acumulada, x.geom)
+	    WHERE    
+	        mv.area_acumulada_ha >= 100
+			AND x.cd_bioma = '1'  --Definir o código do BIOMA
+            --AND dt_passagem between current_date - interval '1 day' and current_date
+	        AND mv.dt_passagem BETWEEN '2024-12-20' AND '2024-12-21' --A DATA APÓS O AND NÃO ENTRA NA CONSULTA
+	    ORDER BY 
+	        mv.id_evento, mv.dt_passagem DESC;
+    """
+    
+    # Importar a query para um GeoDataFrame usando geopandas
+    centroides_eventos = gpd.read_postgis(
+        sql=sql_4,
+        con=conn_str,  # String de conexão com o banco de dados
+        geom_col='geom'  # Coluna de geometria
+    )
+```
+
+```{python}
+# Caminho dos arquivos
+caminho_geotiff = 'imagens/amazonia.tiff'
+caminho_icone = 'imagens/pin.png'  # Ícone convertido para PNG
+
+# Abrindo o arquivo GeoTIFF com Rasterio
+with rasterio.open(caminho_geotiff) as src:
+    # Lendo as bandas R, G e B
+    r = src.read(1)  
+    g = src.read(2)  
+    b = src.read(3)  
+
+    # Normalização das bandas para 8 bits (0-255)
+    def normalizar(banda):
+        return ((banda - banda.min()) / (banda.max() - banda.min()) * 255).astype(np.uint8)
+    
+    r, g, b = map(normalizar, [r, g, b])
+
+    # Empilhando as bandas em um array (altura, largura, canais)
+    rgb = np.dstack((r, g, b))
+
+    # Obtendo as informações de georreferenciamento
+    bounds = src.bounds
+
+    # Normalizar os valores da coluna 'area_eve_ha' para a faixa [0, 1]
+    norm = Normalize(vmin=amazonia_b['area_eve_ha'].min(), vmax=amazonia_b['area_eve_ha'].max())
+
+    # Criar um mapa de cores (escolha o colormap desejado)
+    cmap = plt.cm.YlOrRd  # Ou use qualquer outro como 'plasma', 'inferno', etc.
+
+    # Criar uma instância do ScalarMappable para mapear valores de 'area_eve_ha' para cores
+    sm = ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])  # Não é necessário passar dados específicos aqui
+
+    # Criando figura e eixos
+    fig, ax = plt.subplots(figsize=(11, 9))
+
+    # Exibir a imagem RGB no mapa
+    ax.imshow(rgb, extent=[bounds.left, bounds.right, bounds.bottom, bounds.top])
+
+    # Plotando o GeoDataFrame com cores baseadas na coluna 'area_eve_ha'
+    amazonia_b.plot(column='area_eve_ha', ax=ax, legend=False, 
+                    cmap=cmap, norm=norm, linewidth=0.4, edgecolor='black')
+
+    # Adicionar a barra de cores
+    cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', label='Área de influência (ha)', shrink=0.7, aspect=30, pad=0.07)
+
+    # Carregar a imagem do ícone (com transparência)
+    icone = mpimg.imread(caminho_icone)
+
+    # Verifique se o ícone tem um canal alfa (transparência)
+    if icone.shape[2] == 4:  # Caso tenha 4 canais (RGB + Alpha)
+        icone = icone[:, :, :4]  # Remover o canal alfa, mantendo apenas RGB
+
+    # Adicionar os ícones no lugar dos pontos
+    for idx, row in centroides_eventos.iterrows():
+        ponto = row['geom']  # Certifique-se de que 'geometry' é o nome da coluna
+        if ponto and ponto.geom_type == "Point":  # Certificando-se de que é um ponto
+            x, y = ponto.x, ponto.y
+            imagebox = OffsetImage(icone, zoom=0.017)  # Ajuste o zoom conforme necessário
+            ab = AnnotationBbox(imagebox, (x, y), frameon=False)
+            ax.add_artist(ab)
+
+    # Ajustar rótulos de longitude e latitude (com W/E e S/N)
+    lon_ticks = ax.get_xticks()
+    lon_labels = [f'{abs(int(x))}W' if x < 0 else f'{int(x)}E' for x in lon_ticks]
+    ax.set_xticks(lon_ticks)
+    ax.set_xticklabels(lon_labels)
+
+    lat_ticks = ax.get_yticks()
+    lat_labels = [f'{abs(int(y))}S' if y < 0 else f'{int(y)}N' for y in lat_ticks]
+    ax.set_yticks(lat_ticks)
+    ax.set_yticklabels(lat_labels)
+
+    # Ajustar limites dos eixos para coincidir com a imagem
+    ax.set_xlim(bounds.left, bounds.right)
+    ax.set_ylim(bounds.bottom, bounds.top)
+
+    # Adicionar grade suave
+    # ax.grid(True, linestyle='--', linewidth=0.3, color='gray')
+
+    # Exibir a imagem
+    plt.show()
+
+```
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+##### RANKING PELA ÁREA DE INFLUÊNCIA ACUMULADA - MUNICÍPIO  
+:::
+
+```{python}
+sql_2 ="""
+-- RANKING DE EVENTOS DE FOGO POR MUNICIPIO DO BIOMA AMAZÔNIA
+SELECT 
+	SUM(st_area(st_transform(st_intersection(sub.geom_acumulada,y.geom),5880)))/10000 as area_eve_ha,
+    y.nome AS municipio,
+    y.sg_uf AS uf,
+    COUNT(DISTINCT sub.id_evento) AS total_eventos
+	
+FROM 
+	    (
+		SELECT DISTINCT ON (mv.id_evento)
+	        mv.id,
+	        mv.id_evento,
+	        mv.dt_passagem,
+	        geom_acumulada
+	    FROM 
+	        queimadas.mv_indicadores_queimadas mv
+	    JOIN 
+	        (SELECT cd_bioma, ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida GROUP BY cd_bioma) AS x
+	        ON ST_Intersects(mv.geom_acumulada, x.geom)
+	    WHERE    
+	        mv.area_acumulada_ha >= 100
+	        AND mv.dt_passagem BETWEEN '2025-02-20' AND '2025-02-21' --A DATA APÓS O AND NÃO ENTRA NA CONSULTA
+			AND cd_bioma = 1
+	    ORDER BY 
+	        mv.id_evento, mv.dt_passagem DESC
+			) AS sub  
+
+JOIN 
+    bases_auxiliares.ibge_bc250_lim_municipio_a AS y
+    ON ST_Intersects(sub.geom_acumulada, y.geom)
+
+GROUP BY 
+	y.nome, y.sg_uf, y.geom
+ORDER BY 
+	total_eventos DESC
+LIMIT 10
+"""
+```
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+    
+       
+engine = create_engine(conn_str)
+
+# Carregar os dados em um DataFrame do pandas (sem coluna de geometria)
+tabela_mun = pd.read_sql(sql_2, engine)
+
+# Exibir os dados carregados
+#print(tabela_mun.head())  # Exemplo de exibição das primeiras linhas
+``` 
+
+
+
+```{python}
+# Renomeando colunas corretamente
+tabela_mun = tabela_mun.rename(columns={
+    'area_eve_ha': 'Área de Influência total de eventos (ha)',
+    'uf': 'UF',
+    'municipio': 'Município',
+    'total_eventos': 'Número de Eventos'
+})
+
+# Ordenando o DataFrame por 'Número de Eventos'
+tabela_mun = tabela_mun.sort_values(by='Área de Influência total de eventos (ha)', ascending=False)
+
+# Criando a coluna 'Ranking' com valores sequenciais
+tabela_mun['Ranking'] = [f"{i+1}°" for i in range(len(tabela_mun))]
+
+# Formatando a coluna 'Área de Influência total de eventos (ha)'
+tabela_mun['Área de Influência total de eventos (ha)'] = tabela_mun['Área de Influência total de eventos (ha)']\
+    .apply(lambda x: f"{x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) else x)
+
+# Exibindo a tabela com a nova coluna
+#print(tabela_mun)
+
+```
+
+```{python}
+# Definir a ordem das colunas
+nova_ordem = ['Ranking', 'Área de Influência total de eventos (ha)', 'Município', 'UF', 'Número de Eventos']
+
+# Reorganizando as colunas de acordo com a nova ordem
+tabela_mun = tabela_mun[nova_ordem]
+#print(tabela_mun)
+```
+
+
+```{python}
+#Tabela com ajuste de tamanho de fonte
+def estilo_tabela(df):
+    return df.style.set_table_styles([
+        {'selector': 'thead', 'props': [('background-color', '#DC4A00'), 
+                                        ('color', 'white'), 
+                                        ('font-family', 'Arial, sans-serif'),
+                                        ('font-weight', 'normal'),
+                                        ('width', '600px'), # A tabela ocupará % da largura da página, # Define a largura da tabela em pixels('width', '600px')
+                                        ('font-size', '14px')]},  # Ajuste do tamanho da fonte do cabeçalho
+        {'selector': 'th', 'props': [('text-align', 'center'), ('font-size', '14px')]},
+        {'selector': 'td', 'props': [('text-align', 'center'), ('color', 'black'), ('font-size', '14px')]},  # Ajuste do tamanho da fonte das células
+        {'selector': 'row_heading', 'props': [('display', 'none')]},  # Oculta o índice
+        {'selector': 'col_heading', 'props': [('text-align', 'center')]},
+        {'selector': 'table', 'props': [('border-collapse', 'collapse')]}  # Faz a tabela ter bordas sem espaço
+    ]).apply(lambda x: ['background-color: #fee6e3' if i % 2 else 'background-color: transparent' 
+                        for i in range(len(x))], axis=0).hide(axis="index")  # Outra forma de ocultar o índice
+
+# Exibir a tabela com estilo
+estilo_tabela(tabela_mun)
+```
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+##### RANKING PELA ÁREA DE INFLUÊNCIA ACUMULADA - ESTADO  
+:::
+
+```{python}
+sql_3 ="""
+-- RANKING DE EVENTOS DE FOGO POR ESTADO DO BIOMA AMAZÔNIA
+SELECT 
+	SUM(st_area(st_transform(st_intersection(sub.geom_acumulada,y.geom),5880)))/10000 as area_eve_ha,
+    y.sigla AS UF,  
+    COUNT(DISTINCT sub.id_evento) AS total_eventos
+	
+FROM 
+	    (
+		SELECT DISTINCT ON (mv.id_evento)
+	        mv.id,
+	        mv.id_evento,
+	        mv.dt_passagem,
+	        geom_acumulada
+	    FROM 
+	        queimadas.mv_indicadores_queimadas mv
+	    JOIN 
+	        (SELECT cd_bioma, ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida GROUP BY cd_bioma) AS x
+	        ON ST_Intersects(mv.geom_acumulada, x.geom)
+	    WHERE    
+	        mv.area_acumulada_ha >= 100
+	        AND mv.dt_passagem BETWEEN '2025-02-20' AND '2025-02-21' --A DATA APÓS O AND NÃO ENTRA NA CONSULTA
+			AND cd_bioma = 1
+	    ORDER BY 
+	        mv.id_evento, mv.dt_passagem DESC
+			) AS sub  
+
+JOIN 
+    bases_auxiliares.ibge_bc250_lim_unidade_federacao_a AS y
+    ON ST_Intersects(sub.geom_acumulada, y.geom)
+
+GROUP BY 
+	y.sigla, y.geom
+ORDER BY 
+	total_eventos DESC
+LIMIT 10
+"""
+```
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+    
+       
+engine = create_engine(conn_str)
+
+# Carregar os dados em um DataFrame do pandas (sem coluna de geometria)
+tabela_estados = pd.read_sql(sql_3, engine)
+
+# Exibir os dados carregados
+#print(tabela_estados.head())  # Exemplo de exibição das primeiras linhas
+```
+
+```{python}
+# Renomeando colunas corretamente
+tabela_estados = tabela_estados.rename(columns={
+    'area_eve_ha': 'Área de Influência total de eventos (ha)',
+    'uf': 'UF',    
+    'total_eventos': 'Número de Eventos'
+})
+
+# Ordenando o DataFrame por 'Número de Eventos'
+tabela_estados = tabela_estados.sort_values(by='Área de Influência total de eventos (ha)', ascending=False)
+
+# Criando a coluna 'Ranking' com valores sequenciais
+tabela_estados['Ranking'] = [f"{i+1}°" for i in range(len(tabela_estados))]
+
+# Formatando a coluna 'Área de Influência total de eventos (ha)'
+tabela_estados['Área de Influência total de eventos (ha)'] = tabela_estados['Área de Influência total de eventos (ha)']\
+    .apply(lambda x: f"{x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) else x)
+
+# Exibindo a tabela com a nova coluna
+#print(tabela_estados)
+```
+
+```{python}
+# Definir a ordem das colunas
+nova_ordem = ['Ranking', 'Área de Influência total de eventos (ha)', 'UF', 'Número de Eventos']
+
+# Reorganizando as colunas de acordo com a nova ordem
+tabela_estados = tabela_estados[nova_ordem]
+#print(tabela_estados)
+```
+
+```{python}
+#Tabela com ajuste de tamanho de fonte
+def estilo_tabela(df):
+    return df.style.set_table_styles([
+        {'selector': 'thead', 'props': [('background-color', '#DC4A00'), 
+                                        ('color', 'white'), 
+                                        ('font-family', 'Arial, sans-serif'),
+                                        ('font-weight', 'normal'),
+                                        ('width', '600px'), # A tabela ocupará % da largura da página, # Define a largura da tabela em pixels('width', '600px')
+                                        ('font-size', '14px')]},  # Ajuste do tamanho da fonte do cabeçalho
+        {'selector': 'th', 'props': [('text-align', 'center'), ('font-size', '14px')]},
+        {'selector': 'td', 'props': [('text-align', 'center'), ('color', 'black'), ('font-size', '14px')]},  # Ajuste do tamanho da fonte das células
+        {'selector': 'row_heading', 'props': [('display', 'none')]},  # Oculta o índice
+        {'selector': 'col_heading', 'props': [('text-align', 'center')]},
+        {'selector': 'table', 'props': [('border-collapse', 'collapse')]}  # Faz a tabela ter bordas sem espaço
+    ]).apply(lambda x: ['background-color: #fee6e3' if i % 2 else 'background-color: transparent' 
+                        for i in range(len(x))], axis=0).hide(axis="index")  # Outra forma de ocultar o índice
+
+# Exibir a tabela com estilo
+estilo_tabela(tabela_estados)
+```
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+##### EVENTO MAIS SEVERO BIOMA AMAZÔNIA  
+:::
+
+```{python}
+sql_4 ="""
+-- RANKING DE SEVERIDADE BIOMA (1 = AMAZÔNIA)
+
+--Nesta seleção passam a ser observados e selecionados apenas os eventos mais severos e ainda ativos das últimas 24 horas.
+--Código alterado para trazer somente o nome das cidades que contém a maior parte do evento.
+
+WITH RankedEventos AS (
+  SELECT
+    id_evento,
+    peso_global_passagem,
+    tempo_acumulado_horas,
+    ROW_NUMBER() OVER (PARTITION BY id_evento ORDER BY peso_global_passagem DESC) AS rn_peso,
+    ROW_NUMBER() OVER (PARTITION BY id_evento ORDER BY tempo_acumulado_horas DESC) AS rn_tempo,
+    area_total_evento_ha,
+    i.sigla,
+    m.nome,
+    ST_Area(ST_Intersection(m.geom, q.geom_acumulada)) AS area_intersecao
+  FROM queimadas.mv_indicadores_queimadas as q
+  JOIN bases_auxiliares.ibge_bc250_lim_unidade_federacao_a i ON ST_Intersects(i.geom, q.geom_acumulada)
+  JOIN bases_auxiliares.ibge_bc250_lim_municipio_a m ON ST_Intersects(m.geom, q.geom_acumulada)
+  JOIN queimadas.tb_escopo_queimadas x ON ST_Intersects(x.geom, q.geom_acumulada)
+  JOIN queimadas.tb_bioma_subdividida y ON ST_Intersects(y.geom, q.geom_acumulada)
+  WHERE q.dt_max_evento >= now () - interval '1 day'
+    AND y.cd_bioma = 1 -- ALTERAR CÓDIGO DE ACORDO COM O BIOMA DESEJADO
+),
+CidadePrincipal AS (
+  SELECT
+    id_evento,
+    nome,
+    sigla,
+    area_intersecao,
+    ROW_NUMBER() OVER (PARTITION BY id_evento ORDER BY area_intersecao DESC) AS rn_area
+  FROM RankedEventos
+)
+SELECT
+  r1.id_evento AS "ID do Evento",
+  ROUND(CAST(r1.peso_global_passagem AS numeric), 2) AS "Severidade",
+  CAST(r2.tempo_acumulado_horas AS integer) / 24 AS "Duração do Evento",
+  CAST(r1.area_total_evento_ha AS integer) AS "Área do Evento (ha)",
+  c.sigla AS "UF",
+  c.nome AS "Cidade"
+FROM RankedEventos r1
+JOIN RankedEventos r2 ON r1.id_evento = r2.id_evento
+JOIN CidadePrincipal c ON r1.id_evento = c.id_evento AND c.rn_area = 1
+WHERE r1.rn_peso = 1 AND r2.rn_tempo = 1
+ORDER BY "Severidade" desc
+LIMIT 1;
+"""
+```
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+    
+       
+engine = create_engine(conn_str)
+
+# Carregar os dados em um DataFrame do pandas (sem coluna de geometria)
+severidade = pd.read_sql(sql_4, engine)
+
+# Exibir os dados carregados
+#print(severidade.head())  # Exemplo de exibição das primeiras linhas
+```
+
+```{python}
+# Renomeando colunas corretamente
+severidade = severidade.rename(columns={
+    'Área do Evento (ha)': 'Área de Influência (ha)',
+    'Duração do Evento': 'Duração do Evento (Dias)'    
+   
+    
+})
+
+# Ordenando o DataFrame por 'Número de Eventos'
+severidade = severidade.sort_values(by='Severidade', ascending=False)
+
+# Criando a coluna 'Ranking' com valores sequenciais
+severidade['Ranking'] = [f"{i+1}°" for i in range(len(severidade))]
+
+# Formatando a coluna 'Área de Influência total de eventos (ha)'
+severidade['Área de Influência (ha)'] = severidade['Área de Influência (ha)']\
+    .apply(lambda x: f"{x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) else x)
+
+severidade['Severidade'] = severidade['Severidade']\
+    .apply(lambda x: f"{x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) else x)
+# Exibindo a tabela com a nova coluna
+#print(severidade)
+```
+
+```{python}
+# Definir a ordem das colunas
+nova_ordem = ['Ranking','Severidade', 'ID do Evento','Duração do Evento (Dias)', 'Área de Influência (ha)']
+
+# Reorganizando as colunas de acordo com a nova ordem
+severidade = severidade[nova_ordem]
+#print(tabela_estados)
+```
+
+```{python}
+#Tabela com ajuste de tamanho de fonte
+def estilo_tabela(df):
+    return df.style.set_table_styles([
+        {'selector': 'thead', 'props': [('background-color', '#DC4A00'), 
+                                        ('color', 'white'), 
+                                        ('font-family', 'Arial, sans-serif'),
+                                        ('font-weight', 'normal'),
+                                        ('width', '600px'), # A tabela ocupará % da largura da página, # Define a largura da tabela em pixels('width', '600px')
+                                        ('font-size', '14px')]},  # Ajuste do tamanho da fonte do cabeçalho
+        {'selector': 'th', 'props': [('text-align', 'center'), ('font-size', '14px')]},
+        {'selector': 'td', 'props': [('text-align', 'center'), ('color', 'black'), ('font-size', '14px')]},  # Ajuste do tamanho da fonte das células
+        {'selector': 'row_heading', 'props': [('display', 'none')]},  # Oculta o índice
+        {'selector': 'col_heading', 'props': [('text-align', 'center')]},
+        {'selector': 'table', 'props': [('border-collapse', 'collapse')]}  # Faz a tabela ter bordas sem espaço
+    ]).apply(lambda x: ['background-color: #fee6e3' if i % 2 else 'background-color: transparent' 
+                        for i in range(len(x))], axis=0).hide(axis="index")  # Outra forma de ocultar o índice
+
+# Exibir a tabela com estilo
+estilo_tabela(severidade)
+```
+
+::: {style="text-align: center; font-size: 14px; font-weight: bold;"}
+##### EVENTOS POR MÊS
+:::
+
+```{python}
+#QUERY SQL - Cria coluna acumulados e coluna de ano para o gráfico de acumulados ano a ano
+sql_1 = """
+-- EVENTOS ACUMULADOS AMAZÔNIA LEGAL COM DATAS SEM EVENTOS
+ 
+-- Criação de uma tabela de datas temporária para o intervalo especificado
+WITH RECURSIVE DateRange AS (
+    SELECT '2021-01-01'::date AS dt
+    UNION ALL
+    SELECT (dt + INTERVAL '1 day')::date
+    FROM DateRange
+    WHERE (dt + INTERVAL '1 day') <= CURRENT_DATE - interval '1 day'
+),
+ 
+-- Subconsulta para eventos de fogo
+EventosFogo AS (
+    SELECT 
+        DATE(ev1.dt_minima) AS dt_minima,
+        COUNT(ev1.dt_minima) AS num_eventos
+    FROM 
+        queimadas.tb_evento AS ev1
+   
+    JOIN 
+        queimadas.tb_escopo_queimadas AS escopo -- Interseção com a máscara de escopo espacial
+        ON ST_Intersects(ev1.geom, escopo.geom)
+    JOIN 
+	    (SELECT cd_bioma, ST_Union(geom) AS geom FROM queimadas.tb_bioma_subdividida GROUP BY cd_bioma) AS x
+	    ON ST_Intersects(ev1.geom, x.geom)
+    WHERE 
+        ev1.id_status_evento IN (1, 2, 3) -- Condição de eventos ativos, em observação
+        AND ev1.area_km2 > 1 -- Condição de área maior que 1km2
+		AND x.cd_bioma = '1'  --Definir o código do BIOMA
+        AND ev1.dt_minima BETWEEN '2021-01-01' AND CURRENT_DATE -- Define período a ser investigado      
+    GROUP BY 
+        DATE(ev1.dt_minima)
+)
+ 
+-- Consulta principal que combina as datas com os eventos de fogo
+SELECT 
+    dr.dt AS "data",
+    COALESCE(ef.num_eventos, 0)::INTEGER as num_eventos, 
+	SUM(num_eventos) OVER (PARTITION BY EXTRACT(YEAR FROM dr.dt) ORDER BY dr.dt)::INTEGER AS acumulado_eventos,
+   '2050-' || TO_CHAR(dr.dt, 'MM-DD') AS graf_plot,
+   EXTRACT(YEAR FROM dr.dt)::TEXT AS ano
+FROM 
+    DateRange dr
+LEFT JOIN 
+    EventosFogo ef
+ON 
+    dr.dt = ef.dt_minima
+ORDER BY 
+    dr.dt ASC;
+"""
+```
+
+
+```{python}
+#Conectando ao BANCO DE DADOS - sig_sipam Espelho - QUERY
+
+# Caminho para arquivo de texto de usuário e senha do Banco de dados
+with open(r"C:\Users\valdson.junior\dados_python\user.txt") as user, \
+     open(r"C:\Users\valdson.junior\dados_python\pass.txt") as passw:
+
+    # Criar a string de conexão usando f-string
+    conn_str = f"postgresql://{user.read().strip()}:{passw.read().strip()}@172.23.5.229:5432/sig_sipam"
+    
+       
+engine = create_engine(conn_str)
+
+# Carregar os dados em um DataFrame do pandas (sem coluna de geometria)
+eventos = pd.read_sql(sql_1, engine)
+
+# Exibir os dados carregados
+# print(eventos.head())  # Exemplo de exibição das primeiras linhas
+```
+
+
+```{python}
+# Garantir que a data está no formato correto
+eventos['data'] = pd.to_datetime(eventos['data'], errors='coerce')
+
+# Remover linhas com dados inválidos
+eventos = eventos.dropna(subset=['data', 'num_eventos', 'acumulado_eventos'])
+
+# Criar colunas de ano e mês (traduzido para português)
+eventos['ano'] = eventos['data'].dt.year
+meses_traducao = {
+    "January": "Janeiro", "February": "Fevereiro", "March": "Março", "April": "Abril",
+    "May": "Maio", "June": "Junho", "July": "Julho", "August": "Agosto",
+    "September": "Setembro", "October": "Outubro", "November": "Novembro", "December": "Dezembro"
+}
+eventos['mes'] = eventos['data'].dt.strftime('%B').map(meses_traducao)
+
+# Agrupar por ano e mês
+eventos_agrupados = eventos.groupby(['ano', 'mes'], as_index=False)[['num_eventos', 'acumulado_eventos']].sum()
+
+# Ordenar os meses corretamente
+ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+eventos_agrupados['mes'] = pd.Categorical(eventos_agrupados['mes'], categories=ordem_meses, ordered=True)
+eventos_agrupados = eventos_agrupados.sort_values(['ano', 'mes'])
+
+# Verificar se há dados para o gráfico
+if eventos_agrupados.empty:
+    print("O DataFrame agrupado está vazio. Verifique os dados.")
+else:
+    # Criar paleta de cores
+    cores_personalizadas_hex = ["#FFEB3B","#FFB84D","#E65C00","#990000","#515151"]
+    paleta_cores = sns.color_palette(cores_personalizadas_hex, n_colors=len(eventos_agrupados['ano'].unique()))
+
+    # Criando o gráfico
+    fig, ax1 = plt.subplots(figsize=(12, 8))
+
+    # Gráfico de barras para o número de eventos (eixo y à esquerda)
+    sns.barplot(data=eventos_agrupados, x='mes', y='num_eventos', hue='ano', palette=paleta_cores, ax=ax1)
+
+    # Criando o segundo eixo y (à direita)
+    ax2 = ax1.twinx()
+
+  # Gráfico de linha para o ano de 2025 com cor personalizada
+    dados_ano = eventos_agrupados[eventos_agrupados['ano'] == 2025]
+    sns.lineplot(data=dados_ano, x='mes', y=dados_ano['acumulado_eventos'] / 1000, 
+                color="#515151", marker='o', linewidth=2.5, ax=ax2, label="2025")
+
+
+    # Definir limites fixos para o eixo Y (acumulado de eventos / 1000)
+    ax2.set_ylim(0, 3000)  # Ajuste o valor superior para o limite máximo desejado
+    ax2.set_yticks(range(0, 3010, 250))  # Definir intervalos fixos para o eixo Y (ajuste conforme necessário)
+
+    # Remover linhas de grade
+    ax1.grid(False)
+    ax2.grid(False)
+
+    # Ajustar os limites dos eixos Y para que ambos comecem do zero
+    ax1.set_ylim(bottom=0)  # Eixo à esquerda começa do zero
+    ax2.set_ylim(bottom=0)  # Eixo à direita começa do zero
+
+    # Títulos e rótulos
+    ax1.set_title('Eventos de Fogo Acumulados e Número de Eventos - Bioma Amazônia', fontsize=14, fontweight='bold', ha='center')
+    ax1.set_xlabel('Mês', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Número de Eventos', fontsize=12, fontweight='bold')
+    ax2.set_ylabel('Acumulado de Eventos (x1000)', fontsize=12, fontweight='bold')
+
+    # Ajustar rotação para os meses no eixo X
+    plt.xticks(rotation=45, ha='right', fontsize=12)
+
+    # Posicionar a legenda fora do gráfico, abaixo e na horizontal
+    ax1.legend(title="Ano", bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=len(eventos_agrupados['ano'].unique()), fontsize=12)
+    
+    
+    # Melhorando o layout
+    plt.tight_layout()
+
+    # Exibindo o gráfico
+    plt.show()
+```
