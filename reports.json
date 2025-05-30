@@ -68,6 +68,27 @@
         "date": "2025-02-27",
         "category": "semanal",
         "subCategory": "biomas"
+    },
+     {
+        "title": "Relatório Semanal - Biomas v2.5",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/cenad/mapa_cenad_01.html",
+        "date": "2025-02-27",
+        "category": "semanal",
+        "subCategory": "CENAD"
+    },
+     {
+        "title": "Relatório Semanal - Biomas v2.5",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/cenad/mapa_cenad_02.html",
+        "date": "2025-02-27",
+        "category": "semanal",
+        "subCategory": "CENAD"
+    },
+    {
+        "title": "Relatório Semanal - Biomas v2.5",
+        "url": "https://valdsonjunior.github.io/laboratorio_teste_relatorios_automaticos/relatorios/cenad/tabela_cenad.html",
+        "date": "2025-02-27",
+        "category": "semanal",
+        "subCategory": "CENAD"
     }
 
 ]
