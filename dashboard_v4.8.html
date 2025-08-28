@@ -14,11 +14,6 @@
 </head> 
 <body> 
     <div class="dashboard-container"> 
-        <!-- Título do Painel -->
-        <div class="panel-title">
-            SALA DE MONITORAMENTO - PAINEL DO FOGO
-        </div>
-        
         <!-- Mapa (ampliado) --> 
         <div class="map-container"> 
             <div id="map"></div> 
@@ -32,58 +27,7 @@
                 <h4 id="areaInfoTitle">Área Selecionada</h4>
                 <p id="areaInfoDescription">Nenhuma área selecionada</p>
             </div>
-        </div>
-    </div>
-    <style>
-        .panel-title {
-            position: fixed; 
-            top: 4px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            z-index: 9999; 
-            width: 99%;
-            background: linear-gradient(to right, rgba(255,165,0,0.85), rgba(255,0,0,0.85));
-            padding: 8px 0; 
-            border-radius: 10px;
-            color: white; 
-            font-size: 18px; 
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.3);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.2);
-            font-family: 'Arial', sans-serif;
-            letter-spacing: 1px;
-        }
-
-        /* Ajuste para o container do mapa */
-        .map-container {
-            margin-top: 50px; /* Espaço para o título */
-            position: relative;
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .panel-title {
-                font-size: 16px;
-                padding: 6px 0;
-                width: 95%;
-            }
-            .map-container {
-                margin-top: 45px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .panel-title {
-                font-size: 14px;
-                padding: 5px 0;
-            }
-            .map-container {
-                margin-top: 40px;
-            }
-        }
-    </style>    
+        </div> 
 
         <!-- Controles (expandido com info do header) --> 
         <div class="controls"> 
