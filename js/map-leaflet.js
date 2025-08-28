@@ -138,7 +138,7 @@ function updateBaseLayerButtons(activeLayer) {
     });
 
     // Adiciona classe active ao botão correto
-    const buttonSelector = activeLayer === 'light' ? '[onclick*="mapa-light"]' : '[onclick*="mapa-dark"]';
+    const buttonSelector = activeLayer === 'dark' ? '[onclick*="mapa-dark"]' : '[onclick*="mapa-light"]';
     const activeButton = document.querySelector(buttonSelector);
     if (activeButton) {
         activeButton.classList.add('active');
@@ -293,13 +293,13 @@ function toggleLayer(layerName) {
     const button = event.target.closest('.control-button'); 
     
     // Tratamento especial para mapas base
-    if (layerName === 'mapa-light') {
-        switchBaseLayer('light');
+    if (layerName === 'mapa-dark') {
+        switchBaseLayer('dark');
         return;
     }
     
-    if (layerName === 'mapa-dark') {
-        switchBaseLayer('dark');
+    if (layerName === 'mapa-light') {
+        switchBaseLayer('ligth');
         return;
     }
     
