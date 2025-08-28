@@ -28,9 +28,12 @@ async function initMap() {
         
         // Configurar layers de mapas base
         setupBaseLayers();
+
+        // Remover os botões de zoom depois
+        map.zoomControl.remove();
         
         // Adicionar mapa light como padrão
-        baseLayers.light.addTo(map);
+        baseLayers.dark.addTo(map);
 
         // Mostrar progresso de carregamento
         loadingEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando dados GeoJSON...';

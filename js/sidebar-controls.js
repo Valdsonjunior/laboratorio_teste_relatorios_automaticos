@@ -435,7 +435,7 @@ function startAutoRun() {
             // Mostrar notificação da camada atual
             const layerNames = {
                 'eventos-fogo': 'Eventos de Fogo',
-                'heatmap': 'HeatMap',
+                'heatmap': 'Map de Calor',
                 'novos-eventos': 'Novos Eventos',
                 'eventos-severos': 'Eventos mais Severos',
                 'maior-area': 'Maior Área de Influência',
