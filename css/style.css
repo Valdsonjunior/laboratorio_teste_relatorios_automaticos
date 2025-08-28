@@ -1,0 +1,402 @@
+/* ========================================
+   DASHBOARD GEOADMIN - ESTILOS PRINCIPAIS
+   ======================================== */
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+} 
+
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
+    height: 100vh; 
+    overflow: hidden; 
+} 
+
+/* ========================================
+   LAYOUT GRID PRINCIPAL
+   ======================================== */
+
+.dashboard-container { 
+    display: grid; 
+    grid-template-areas:  
+        "map controls" 
+        "stats controls"; 
+    grid-template-columns: 1fr 280px; 
+    grid-template-rows: 1fr 75px; 
+    height: 100vh; 
+    gap: 10px; 
+    padding: 10px; 
+} 
+
+/* ========================================
+   CONTAINER DO MAPA
+   ======================================== */
+
+.map-container { 
+    grid-area: map; 
+    background: rgba(30, 30, 50, 0.95); 
+    border-radius: 15px; 
+    overflow: hidden; 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+    backdrop-filter: blur(10px); 
+    position: relative; 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+} 
+
+#map { 
+    height: 100%; 
+    width: 100%; 
+} 
+
+/* ========================================
+   PAINEL DE CONTROLES
+   ======================================== */
+
+.controls { 
+    grid-area: controls; 
+    background: rgba(30, 30, 50, 0.95); 
+    border-radius: 15px; 
+    padding: 15px; 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+    backdrop-filter: blur(10px); 
+    overflow-y: auto; 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+} 
+
+/* Header info na lateral */
+.header-info {
+    background: linear-gradient(135deg, #000000, #000000);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.logo-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.last-update {
+    font-size: 11px;
+    opacity: 0.8;
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* ========================================
+   GRUPOS DE CONTROLES
+   ======================================== */
+
+.control-group { 
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+} 
+
+.control-group h3 { 
+    margin-bottom: 10px; 
+    color: #e2e8f0; 
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+} 
+
+/* ========================================
+   BOTÕES DE CONTROLE
+   ======================================== */
+
+.control-button { 
+    width: 100%; 
+    padding: 10px; 
+    margin: 4px 0; 
+    border: none; 
+    border-radius: 8px; 
+    background: linear-gradient(135deg, #140634, #140634); 
+    color: white; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+} 
+
+.control-button:hover { 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); 
+    background: linear-gradient(135deg, #0d35b8, #0347d9); 
+} 
+
+.control-button.active { 
+    background: linear-gradient(135deg, #059669, #059669); 
+} 
+
+/* ============================
+   PAINEL DE ESTATÍSTICAS 
+   ============================ */
+
+.stats { 
+    grid-area: stats; 
+    background: rgba(30, 30, 50, 0.95); 
+    border-radius: 15px; 
+    padding: 8px; /* Reduzido apenas o padding da div de 12px para 8px */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+    backdrop-filter: blur(10px); 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+    gap: 8px; /* Reduzido o gap de 10px para 8px */
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    height: auto;
+    min-height: auto;
+    /* Força uma altura máxima para a div */
+    max-height: 100px; /* Define altura máxima da div stats */
+} 
+
+/* Mantém TUDO igual nos cartões - só mudou a div pai */
+.stat-card { 
+    background: linear-gradient(135deg,  #140634, #140634); 
+    color: white; 
+    padding: 10px 12px; /* MANTIDO igual ao original */
+    border-radius: 12px; 
+    text-align: center; 
+    transition: transform 0.3s ease; 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: auto;
+    min-height: 60px; /* MANTIDO igual ao original */
+} 
+
+.stat-card:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3); 
+} 
+
+.stat-number { 
+    font-size: 20px; /* MANTIDO igual ao original */
+    font-weight: bold; 
+    margin-bottom: 2px; /* MANTIDO igual ao original */
+    line-height: 1.2; /* MANTIDO igual ao original */
+    margin: 0; 
+} 
+
+.stat-label { 
+    font-size: 15px; /* MANTIDO igual ao original */
+    opacity: 0.9; 
+    /* MANTIDO tudo igual ao original */
+}
+
+/* ========================================
+   INDICADORES E ALERTAS
+   ======================================== */
+
+.refresh-indicator { 
+    position: absolute; 
+    top: 10px; 
+    right: 10px; 
+    background: rgba(79, 70, 229, 0.9); 
+    color: white; 
+    padding: 8px 15px; 
+    border-radius: 20px; 
+    font-size: 12px; 
+    display: none; 
+    z-index: 1000; 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+} 
+
+.loading { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    font-size: 16px; 
+    color: #cbd5e0; 
+    background: rgba(30, 30, 50, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 200px;
+} 
+
+.error-message {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 1000;
+    max-width: 80%;
+    text-align: center;
+}
+
+.area-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(30, 30, 50, 0.95);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    display: none;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.area-info h4 {
+    margin: 0 0 8px 0;
+    color: #60a5fa;
+    font-size: 16px;
+}
+
+.area-info p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 13px;
+}
+
+/* ========================================
+   FORMULÁRIOS E FILTROS
+   ======================================== */
+
+.filter-group { 
+    margin-bottom: 12px; 
+} 
+
+.filter-group label { 
+    display: block; 
+    margin-bottom: 6px; 
+    font-weight: 500; 
+    color: #e2e8f0; 
+    font-size: 12px; 
+} 
+
+.filter-group select, 
+.filter-group input { 
+    width: 100%; 
+    padding: 8px; 
+    border: 1px solid #4a5568; 
+    border-radius: 6px; 
+    font-size: 12px; 
+    background: #2d3748; 
+    color: #e2e8f0; 
+} 
+
+.filter-group select:focus, 
+.filter-group input:focus { 
+    outline: none; 
+    border-color: #4f46e5; 
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); 
+} 
+
+/* ========================================
+   ANIMAÇÕES E EFEITOS
+   ======================================== */
+
+@keyframes pulse { 
+    0% { opacity: 1; } 
+    50% { opacity: 0.5; } 
+    100% { opacity: 1; } 
+} 
+
+.updating { 
+    animation: pulse 1s infinite; 
+}
+
+/* ========================================
+   SCROLLBAR PERSONALIZADA
+   ======================================== */
+
+.controls::-webkit-scrollbar {
+    width: 6px;
+}
+
+.controls::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.controls::-webkit-scrollbar-thumb {
+    background: rgba(79, 70, 229, 0.6);
+    border-radius: 3px;
+}
+
+.controls::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 70, 229, 0.8);
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-areas:
+            "map"
+            "controls"
+            "stats";
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto auto;
+    }
+    
+    .controls {
+        max-height: 300px;
+    }
+    
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 5px;
+        gap: 5px;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 10px;
+    }
+    
+    .stat-number {
+        font-size: 18px;
+    }
+}
